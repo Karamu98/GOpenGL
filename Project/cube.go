@@ -89,6 +89,12 @@ func initCube() *Cube {
 	return newCube
 }
 
+func (cube *Cube) draw() {
+	gl.BindVertexArray(cube.vao)
+	gl.DrawArrays(gl.TRIANGLES, 0, 36)
+	gl.BindVertexArray(0)
+}
+
 func drawCube(cubeToDraw *Cube) {
 	gl.BindVertexArray(cubeToDraw.vao)
 	gl.DrawArrays(gl.TRIANGLES, 0, 36)

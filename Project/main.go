@@ -6,6 +6,8 @@ import (
 	"log"
 	"runtime"
 
+	"./shader"
+
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/go-gl/mathgl/mgl32"
@@ -14,7 +16,7 @@ import (
 const winWidth = 1280
 const winHeight = 720
 
-var objShader *Shader
+var objShader *shader.Shader
 var cube *Cube
 var cam *Camera
 
@@ -73,9 +75,9 @@ func startUp() {
 	gl.DepthFunc(gl.LESS)
 	gl.ClearColor(0.2, 0.2, 0.2, 1.0)
 
-	objShader = createShader("res/shaders/blinnphong.glsl")
+	objShader = shader.Create("res/shaders/blinnphong.glsl")
 
-	bindShader(objShader)
+	objShader.Bind()
 
 	cam = &Camera{}
 
@@ -90,8 +92,8 @@ func startUp() {
 		cam.obj.Row(3).Z(),
 	}
 
-	setMat4(objShader, "camProjView", projView)
-	setVec3(objShader, "gCamPos", camPos)
+	objShader.SetMat4("camProjView", projView)
+	objShader.SetVec3("gCamPos", camPos)
 
 	cube = initCube()
 }
@@ -107,14 +109,14 @@ func run() {
 	for !window.ShouldClose() {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-		if bindShader(objShader) {
-			setVec3(objShader, "gLight.pos", sceneLight.pos)
-			setVec3(objShader, "gLight.colour", sceneLight.colour)
+		if objShader.Bind() {
+			objShader.SetVec3("gLight.pos", sceneLight.pos)
+			objShader.SetVec3("gLight.colour", sceneLight.colour)
 
-			setFloat(objShader, "gGamma", 1.8)
+			objShader.SetFloat("gGamma", 1.8)
 
-			setMat4(objShader, "objMatrix", cube.objMat)
-			drawCube(cube)
+			objShader.SetMat4("objMatrix", cube.objMat)
+			cube.draw()
 		}
 
 		window.SwapBuffers()
