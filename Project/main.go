@@ -15,16 +15,24 @@ const winWidth = 1280
 const winHeight = 720
 
 var objShader *Shader
+var cube *Cube
+var cam *Camera
 
 var sceneLight Light = Light{
 	pos:    mgl32.Vec3{5, 5, 5},
-	colour: mgl32.Vec3{1, 1, 1},
+	colour: mgl32.Vec3{255, 255, 255},
 }
 
 // Light ... A simple light
 type Light struct {
 	pos    mgl32.Vec3
 	colour mgl32.Vec3
+}
+
+// Camera .. A simple camera
+type Camera struct {
+	obj        mgl32.Mat4
+	projection mgl32.Mat4
 }
 
 func main() {
@@ -61,9 +69,31 @@ func startUp() {
 	version := gl.GoStr(gl.GetString(gl.VERSION))
 	fmt.Println("OpenGL Version", version)
 
+	gl.Enable(gl.DEPTH_TEST)
+	gl.DepthFunc(gl.LESS)
+	gl.ClearColor(0.2, 0.2, 0.2, 1.0)
+
 	objShader = createShader("res/shaders/blinnphong.glsl")
 
 	bindShader(objShader)
+
+	cam = &Camera{}
+
+	cam.obj = mgl32.LookAtV(mgl32.Vec3{5, 5, 5}, mgl32.Vec3{0, 0, 0}, mgl32.Vec3{0, 1, 0})
+	cam.projection = mgl32.Perspective(mgl32.DegToRad(60.0), float32(winWidth)/winHeight, 0.1, 100.0)
+
+	projView := cam.projection.Mul4(cam.obj)
+
+	camPos := mgl32.Vec3{
+		cam.obj.Row(3).X(),
+		cam.obj.Row(3).Y(),
+		cam.obj.Row(3).Z(),
+	}
+
+	setMat4(objShader, "camProjView", projView)
+	setVec3(objShader, "gCamPos", camPos)
+
+	cube = initCube()
 }
 
 func shutDown() {
@@ -80,6 +110,11 @@ func run() {
 		if bindShader(objShader) {
 			setVec3(objShader, "gLight.pos", sceneLight.pos)
 			setVec3(objShader, "gLight.colour", sceneLight.colour)
+
+			setFloat(objShader, "gGamma", 1.8)
+
+			setMat4(objShader, "objMatrix", cube.objMat)
+			drawCube(cube)
 		}
 
 		window.SwapBuffers()
