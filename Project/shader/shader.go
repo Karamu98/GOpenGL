@@ -2,10 +2,10 @@ package shader
 
 import (
 	"bufio"
-	"fmt"
-	"log"
 	"os"
 	"strings"
+
+	log "../Utilities/Logger"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/mathgl/mgl32"
@@ -23,6 +23,7 @@ type Shader struct {
 
 // Create .. Creates a shader from file
 func Create(shaderPath string) *Shader {
+	newShader := &Shader{}
 
 	// If the shader is already created, return it
 	if shaderCache == nil {
@@ -34,15 +35,13 @@ func Create(shaderPath string) *Shader {
 	sources := preProcess(shaderPath)
 
 	if sources == nil {
-		log.Fatal("Could not create shader.")
-		return nil
+		log.Errorf("Shader source invalid.")
+		return newShader
 	}
 
-	newShader := &Shader{}
-
 	if !newShader.compileSources(sources) {
-		log.Fatal("Could not compile sources")
-		return nil
+		log.Errorf("Could not compile sources")
+		return newShader
 	}
 
 	shaderCache[shaderPath] = newShader
@@ -60,7 +59,7 @@ func shaderTypeFromString(typeString string) (uint32, bool) {
 		return gl.FRAGMENT_SHADER, false
 	}
 
-	log.Fatalln("Invalid shader type: " + typeString)
+	log.Errorf("Invalid shader type: %v\n", typeString)
 
 	return 0, true
 }
@@ -72,7 +71,7 @@ func stringFromShaderType(typeInt uint32) (string, bool) {
 		return "fragment", false
 	}
 
-	log.Fatalln("Invalid shader type: %i", typeInt)
+	log.Errorf("Invalid shader type: %v\n", typeInt)
 
 	return "", true
 }
@@ -81,7 +80,7 @@ func preProcess(shaderPath string) map[uint32]string {
 
 	file, err := os.Open(shaderPath)
 	if err != nil {
-		log.Println("File: {0} not found.", shaderPath)
+		log.Errorf("File: %v not found.\n", shaderPath)
 		return nil
 	}
 	defer file.Close()
@@ -101,11 +100,10 @@ func preProcess(shaderPath string) map[uint32]string {
 			if line[:len(typeToken)] == typeToken {
 
 				tokenDetail := line[len(typeToken)+1:]
-				fmt.Println("Found token: " + tokenDetail)
+				log.Infof("Found token: %v\n", tokenDetail)
 
 				curProgram, isErr = shaderTypeFromString(tokenDetail)
 				if isErr {
-					log.Fatalln(curProgram)
 					return nil
 				}
 
@@ -133,7 +131,7 @@ func (shader *Shader) compileSources(sources map[uint32]string) bool {
 			return false
 		}
 
-		fmt.Println("Compiling " + sType + " shader.")
+		log.Infof("Compiling %v shader.\n", sType)
 
 		// Create and compile the shader
 		shader := gl.CreateShader(key)
@@ -156,7 +154,7 @@ func (shader *Shader) compileSources(sources map[uint32]string) bool {
 			shaderName, validKey := stringFromShaderType(key)
 			if !validKey {
 
-				log.Fatalln(shaderName + " failed to compile:\n" + logMessage)
+				log.Errorf("%v failed to compile:\n%v\n", shaderName, logMessage)
 			}
 
 			return false
@@ -186,7 +184,7 @@ func (shader *Shader) compileSources(sources map[uint32]string) bool {
 			gl.DeleteShader(shaderIDs[i])
 		}
 
-		log.Fatalln("Program failed to link:\n %s", logMessage)
+		log.Fatalf("Program failed to link:\n %v\n", logMessage)
 
 		return false
 	}
@@ -213,6 +211,11 @@ func (shader *Shader) getUniformLocation(uniformName string) int32 {
 	loc = gl.GetUniformLocation(shader.shaderProgram, gl.Str(uniformName+"\x00"))
 
 	shader.uniformCache[uniformName] = loc
+
+	if loc == -1 {
+		log.Warnf("Uniform %v not found in shader.\n", uniformName)
+	}
+
 	return loc
 }
 
@@ -220,15 +223,12 @@ func (shader *Shader) getUniformLocation(uniformName string) int32 {
 func (shader *Shader) SetBool(uniformName string, value bool) {
 	var loc int32 = shader.getUniformLocation(uniformName)
 
-	if loc == -1 {
-		fmt.Println("Uniform %s not found in shader.", uniformName)
-	} else {
+	if loc != -1 {
 		if value {
 			gl.Uniform1i(loc, 1)
 		} else {
 			gl.Uniform1i(loc, 0)
 		}
-
 	}
 }
 
@@ -236,9 +236,7 @@ func (shader *Shader) SetBool(uniformName string, value bool) {
 func (shader *Shader) SetInt(uniformName string, value int32) {
 	var loc int32 = shader.getUniformLocation(uniformName)
 
-	if loc == -1 {
-		fmt.Println("Uniform %s not found in shader.", uniformName)
-	} else {
+	if loc != -1 {
 		gl.Uniform1i(loc, value)
 	}
 }
@@ -247,9 +245,7 @@ func (shader *Shader) SetInt(uniformName string, value int32) {
 func (shader *Shader) SetFloat(uniformName string, value float32) {
 	var loc int32 = shader.getUniformLocation(uniformName)
 
-	if loc == -1 {
-		fmt.Println("Uniform %s not found in shader.", uniformName)
-	} else {
+	if loc != -1 {
 		gl.Uniform1f(loc, value)
 	}
 }
@@ -258,9 +254,7 @@ func (shader *Shader) SetFloat(uniformName string, value float32) {
 func (shader *Shader) SetVec2(uniformName string, value mgl32.Vec2) {
 	var loc int32 = shader.getUniformLocation(uniformName)
 
-	if loc == -1 {
-		fmt.Println("Uniform %s not found in shader.", uniformName)
-	} else {
+	if loc != -1 {
 		gl.Uniform2f(loc, value.X(), value.Y())
 	}
 }
@@ -269,9 +263,7 @@ func (shader *Shader) SetVec2(uniformName string, value mgl32.Vec2) {
 func (shader *Shader) SetVec3(uniformName string, value mgl32.Vec3) {
 	var loc int32 = shader.getUniformLocation(uniformName)
 
-	if loc == -1 {
-		fmt.Println("Uniform %s not found in shader.", uniformName)
-	} else {
+	if loc != -1 {
 		gl.Uniform3f(loc, value.X(), value.Y(), value.Z())
 	}
 }
@@ -280,9 +272,7 @@ func (shader *Shader) SetVec3(uniformName string, value mgl32.Vec3) {
 func (shader *Shader) SetVec4(uniformName string, value mgl32.Vec4) {
 	var loc int32 = shader.getUniformLocation(uniformName)
 
-	if loc == -1 {
-		fmt.Println("Uniform %s not found in shader.", uniformName)
-	} else {
+	if loc != -1 {
 		gl.Uniform4f(loc, value.X(), value.Y(), value.Z(), value.W())
 	}
 }
@@ -291,9 +281,7 @@ func (shader *Shader) SetVec4(uniformName string, value mgl32.Vec4) {
 func (shader *Shader) SetMat3(uniformName string, value mgl32.Mat3) {
 	var loc int32 = shader.getUniformLocation(uniformName)
 
-	if loc == -1 {
-		fmt.Println("Uniform %s not found in shader.", uniformName)
-	} else {
+	if loc != -1 {
 		gl.UniformMatrix3fv(loc, 1, false, &value[0])
 	}
 }
@@ -302,9 +290,7 @@ func (shader *Shader) SetMat3(uniformName string, value mgl32.Mat3) {
 func (shader *Shader) SetMat4(uniformName string, value mgl32.Mat4) {
 	var loc int32 = shader.getUniformLocation(uniformName)
 
-	if loc == -1 {
-		fmt.Println("Uniform %s not found in shader.", uniformName)
-	} else {
+	if loc != -1 {
 		gl.UniformMatrix4fv(loc, 1, false, &value[0])
 	}
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"./shader"
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/mathgl/mgl32"
 )
@@ -59,13 +60,13 @@ var vertexData = []float32{
 
 // Cube ... Simple Cube
 type Cube struct {
-	vbo    uint32
-	vao    uint32
-	objMat mgl32.Mat4
+	vbo       uint32
+	vao       uint32
+	transform Transform
 }
 
-func initCube() *Cube {
-	newCube := &Cube{}
+func createCube() Cube {
+	newCube := Cube{}
 
 	gl.GenVertexArrays(1, &newCube.vao)
 	gl.GenBuffers(1, &newCube.vbo)
@@ -84,19 +85,15 @@ func initCube() *Cube {
 	gl.EnableVertexAttribArray(2)
 	gl.VertexAttribPointer(2, 2, gl.FLOAT, false, 8*4, gl.PtrOffset(6*4))
 
-	newCube.objMat = mgl32.Ident4()
+	newCube.transform.objMatrix = mgl32.Ident4()
 
 	return newCube
 }
 
-func (cube *Cube) draw() {
-	gl.BindVertexArray(cube.vao)
-	gl.DrawArrays(gl.TRIANGLES, 0, 36)
-	gl.BindVertexArray(0)
-}
+func (cube *Cube) draw(shader *shader.Shader) {
+	shader.SetMat4("objMatrix", cube.transform.objMatrix)
 
-func drawCube(cubeToDraw *Cube) {
-	gl.BindVertexArray(cubeToDraw.vao)
+	gl.BindVertexArray(cube.vao)
 	gl.DrawArrays(gl.TRIANGLES, 0, 36)
 	gl.BindVertexArray(0)
 }

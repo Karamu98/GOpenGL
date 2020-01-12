@@ -1,11 +1,10 @@
 package main
 
 import (
-	"fmt"
 	_ "image/png"
-	"log"
 	"runtime"
 
+	logger "./Utilities/Logger"
 	"./shader"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
@@ -17,85 +16,77 @@ const winWidth = 1280
 const winHeight = 720
 
 var objShader *shader.Shader
-var cube *Cube
-var cam *Camera
+var cube Cube
+var cam Camera
 
-var sceneLight Light = Light{
-	pos:    mgl32.Vec3{5, 5, 5},
-	colour: mgl32.Vec3{255, 255, 255},
-}
-
-// Light ... A simple light
-type Light struct {
-	pos    mgl32.Vec3
-	colour mgl32.Vec3
-}
-
-// Camera .. A simple camera
-type Camera struct {
-	obj        mgl32.Mat4
-	projection mgl32.Mat4
+var sceneLight PointLight = PointLight{
+	light: light{
+		position: mgl32.Vec3{5, 5, 5},
+		colour:   mgl32.Vec3{255, 255, 255},
+	},
+	attenuation: 0.0,
 }
 
 func main() {
-
 	runtime.LockOSThread()
 
-	fmt.Println("Hello World")
-	startUp()
+	if startUp() == false {
+		shutDown()
+		return
+	}
 	run()
 	shutDown()
 }
 
-func startUp() {
+func startUp() bool {
+	// OpenGL Initialisation
+	{
+		// Try initialise GLFW
+		if err := glfw.Init(); err != nil {
+			panic(err)
+		}
 
-	// Try initialise GLFW
-	if err := glfw.Init(); err != nil {
-		log.Fatalln("Failed to initialise GLFW:", err)
+		// Try create a window
+		window, err := glfw.CreateWindow(winWidth, winHeight, "Demo", nil, nil)
+		if err != nil {
+			panic(err)
+		}
+
+		// Focus this window into context
+		window.MakeContextCurrent()
+
+		// Try initialise OpenGL
+		if err := gl.Init(); err != nil {
+			panic(err)
+		}
+
+		// Print version
+		version := gl.GoStr(gl.GetString(gl.VERSION))
+		logger.Infof("OpenGL Version: %v\n", version)
+
+		// Globals
+		gl.Enable(gl.DEPTH_TEST)
+		gl.DepthFunc(gl.LESS)
+		gl.ClearColor(0.2, 0.2, 0.2, 1.0)
 	}
 
-	// Try create a window
-	window, err := glfw.CreateWindow(winWidth, winHeight, "Demo", nil, nil)
-	if err != nil {
-		panic(err)
-	}
-
-	// Focus this window into context
-	window.MakeContextCurrent()
-
-	// Try initialise OpenGL
-	if err := gl.Init(); err != nil {
-		panic(err)
-	}
-
-	version := gl.GoStr(gl.GetString(gl.VERSION))
-	fmt.Println("OpenGL Version", version)
-
-	gl.Enable(gl.DEPTH_TEST)
-	gl.DepthFunc(gl.LESS)
-	gl.ClearColor(0.2, 0.2, 0.2, 1.0)
-
+	// Create and bind
 	objShader = shader.Create("res/shaders/blinnphong.glsl")
-
-	objShader.Bind()
-
-	cam = &Camera{}
-
-	cam.obj = mgl32.LookAtV(mgl32.Vec3{5, 5, 5}, mgl32.Vec3{0, 0, 0}, mgl32.Vec3{0, 1, 0})
-	cam.projection = mgl32.Perspective(mgl32.DegToRad(60.0), float32(winWidth)/winHeight, 0.1, 100.0)
-
-	projView := cam.projection.Mul4(cam.obj)
-
-	camPos := mgl32.Vec3{
-		cam.obj.Row(3).X(),
-		cam.obj.Row(3).Y(),
-		cam.obj.Row(3).Z(),
+	if !objShader.Bind() {
+		logger.Errorln("Failed to create shader.")
+		return false
 	}
 
-	objShader.SetMat4("camProjView", projView)
-	objShader.SetVec3("gCamPos", camPos)
+	objShader.SetFloat("gGamma", 1.8)
 
-	cube = initCube()
+	cam = createCamera(100, 0.1, 100)
+	cam.transform.SetPosition(mgl32.Vec3{5, 3, 5})
+	cam.transform.LookAt(mgl32.Vec3{0, 0, 0})
+	cam.Draw(objShader)
+
+	cube = createCube()
+
+	return true
 }
 
 func shutDown() {
@@ -110,13 +101,8 @@ func run() {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		if objShader.Bind() {
-			objShader.SetVec3("gLight.pos", sceneLight.pos)
-			objShader.SetVec3("gLight.colour", sceneLight.colour)
-
-			objShader.SetFloat("gGamma", 1.8)
-
-			objShader.SetMat4("objMatrix", cube.objMat)
-			cube.draw()
+			sceneLight.Draw(objShader)
+			cube.draw(objShader)
 		}
 
 		window.SwapBuffers()
