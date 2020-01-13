@@ -5,6 +5,7 @@ import (
 	"runtime"
 
 	logger "./Utilities/Logger"
+	util "./Utilities"
 	"./shader"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
@@ -90,7 +91,9 @@ func startUp() bool {
 }
 
 func shutDown() {
+	cube.destroy()
 	glfw.Terminate()
+	util.LogGLErrors()
 }
 
 func run() {
@@ -107,5 +110,8 @@ func run() {
 
 		window.SwapBuffers()
 		glfw.PollEvents()
+
+		// Check for errors
+		util.LogGLErrors()
 	}
 }

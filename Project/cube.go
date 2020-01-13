@@ -97,3 +97,8 @@ func (cube *Cube) draw(shader *shader.Shader) {
 	gl.DrawArrays(gl.TRIANGLES, 0, 36)
 	gl.BindVertexArray(0)
 }
+
+func (cube *Cube) destroy() {
+	buffers := []*uint32{&cube.vao, &cube.vbo}
+	gl.DeleteBuffers(2, buffers[0])
+}
