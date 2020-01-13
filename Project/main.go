@@ -4,8 +4,8 @@ import (
 	_ "image/png"
 	"runtime"
 
-	logger "./Utilities/Logger"
 	util "./Utilities"
+	logger "./Utilities/Logger"
 	"./shader"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
@@ -19,6 +19,7 @@ const winHeight = 720
 var objShader *shader.Shader
 var cube Cube
 var cam Camera
+var texture *Texture
 
 var sceneLight PointLight = PointLight{
 	light: light{
@@ -71,7 +72,11 @@ func startUp() bool {
 		gl.ClearColor(0.2, 0.2, 0.2, 1.0)
 	}
 
-	// Create and bind
+	// Create and bind texture
+	texture = CreateTexture("res/textures/test.png")
+	texture.Bind(gl.TEXTURE0)
+
+	// Create and bind shader
 	objShader = shader.Create("res/shaders/blinnphong.glsl")
 	if !objShader.Bind() {
 		logger.Errorln("Failed to create shader.")
@@ -79,6 +84,7 @@ func startUp() bool {
 	}
 
 	objShader.SetFloat("gGamma", 1.8)
+	objShader.SetInt("gMaterial.texture", 0)
 
 	cam = createCamera(100, 0.1, 100)
 	cam.transform.SetPosition(mgl32.Vec3{5, 3, 5})

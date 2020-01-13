@@ -21,7 +21,7 @@ type Shader struct {
 	uniformCache  map[string]int32
 }
 
-// Create .. Creates a shader from file
+// Create .. Creates a shader from file or returns cached
 func Create(shaderPath string) *Shader {
 	newShader := &Shader{}
 
