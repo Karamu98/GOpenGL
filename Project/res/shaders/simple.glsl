@@ -35,10 +35,7 @@ struct Light
 struct Material
 {
 	sampler2D texture;
-	sampler2D spec;
-	sampler2D emission;
-	float emissionBrightness;
-	float shininess;
+	float spec;
 };
 
 
@@ -59,26 +56,23 @@ in Vertex
 
 void main()
 {
-	// Ambient
+	// ambient
 	vec3 ambient = 0.05 * gLight.colour;
 
-	// Diffuse
+	// diffuse
 	vec3 lightDir = normalize(gLight.pos - vert.pos.xyz);
 	vec3 normal = normalize(vert.normal);
 	float diff = max(dot(lightDir, normal), 0.0);
 	vec3 diffuse = diff * gLight.colour;
 
-	// Specular
+	// specular
 	vec3 viewDir = normalize(gCamPos - vert.pos.xyz);
 	vec3 halfwayDir = normalize(lightDir + viewDir);
-	float spec = pow(max(dot(normal, halfwayDir), 0.0), gMaterial.shininess);
-	vec3 specular = gLight.colour * spec * texture(gMaterial.spec, vert.uv).rgb;
-
-	// Emissive
-	vec3 emission = texture(gMaterial.emission, vert.uv).rgb * gMaterial.emissionBrightness;
+	float spec = pow(max(dot(normal, halfwayDir), 0.0), gMaterial.spec);
+	vec3 specular = gLight.colour * spec;
 
 	// Grab unclamped final colour
-	vec3 hdr = texture(gMaterial.texture, vert.uv).rgb * (ambient + diffuse + specular + emission);
+	vec3 hdr = texture(gMaterial.texture, vert.uv).rgb * (ambient + diffuse + specular);
 
 	/// Reinhard tone mapping
 	vec3 mapped = hdr / (hdr + vec3(1.0));

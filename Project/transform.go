@@ -22,3 +22,5 @@ func (transform *Transform) GetPosition() mgl32.Vec3 {
 func (transform *Transform) LookAt(target mgl32.Vec3) {
 	transform.objMatrix = mgl32.LookAtV(transform.GetPosition(), target, mgl32.Vec3{0, 1, 0})
 }
+
+

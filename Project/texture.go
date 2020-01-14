@@ -2,6 +2,7 @@ package main
 
 import (
 	"image"
+	"image/draw"
 	"os"
 
 	log "./Utilities/Logger"
@@ -42,29 +43,31 @@ func CreateTexture(filePath string) *Texture {
 	// Load image
 	imgFile, err := os.Open(filePath)
 	if err != nil {
-		log.Errorf("Couldn't load texture at %v.", filePath)
+		log.Errorf("Couldn't load texture at %v.\n", filePath)
 		return newTex
 	}
 
 	img, _, err := image.Decode(imgFile)
 	if err != nil {
-		log.Errorf("Couldn't decode texture at %v. %v", filePath, err)
+		log.Errorf("Couldn't decode texture at %v. %v\n", filePath, err)
 		return newTex
 	}
 
 	rgba := image.NewRGBA(img.Bounds())
 	if rgba.Stride != rgba.Rect.Size().X*4 {
-		log.Errorf("Unsupported stride for %v", filePath)
+		log.Errorf("Unsupported stride for %v\n", filePath)
 		return newTex
 	}
+
+	draw.Draw(rgba, rgba.Bounds(), img, image.Point{0, 0}, draw.Src)
 
 	gl.GenTextures(1, &newTex.textureID)
 	gl.ActiveTexture(gl.TEXTURE0)
 	gl.BindTexture(gl.TEXTURE_2D, newTex.textureID)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT)
 	gl.TexImage2D(
 		gl.TEXTURE_2D,
 		0,
