@@ -23,4 +23,7 @@ func (transform *Transform) LookAt(target mgl32.Vec3) {
 	transform.objMatrix = mgl32.LookAtV(transform.GetPosition(), target, mgl32.Vec3{0, 1, 0})
 }
 
-
+// Rotate ... Rotates the object about axis by angle
+func (transform *Transform) Rotate(angle float32, axis mgl32.Vec3) {
+	transform.objMatrix = mgl32.HomogRotate3D(angle, axis)
+}

@@ -1,11 +1,11 @@
-package shader
+package main
 
 import (
 	"bufio"
 	"os"
 	"strings"
 
-	log "../Utilities/Logger"
+	log "./Utilities/Logger"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/mathgl/mgl32"
@@ -21,8 +21,8 @@ type Shader struct {
 	uniformCache  map[string]int32
 }
 
-// Create .. Creates a shader from file or returns cached
-func Create(shaderPath string) *Shader {
+// CreateShader ... Creates a shader from file or returns cached
+func CreateShader(shaderPath string) *Shader {
 	newShader := &Shader{}
 
 	// If the shader is already created, return it
@@ -47,6 +47,13 @@ func Create(shaderPath string) *Shader {
 	shaderCache[shaderPath] = newShader
 
 	return newShader
+}
+
+// Destroy ... Removes the program from OpenGL
+func (shader *Shader) Destroy() {
+	gl.DeleteProgram(shader.shaderProgram)
+	shader.isValid = false
+	shaderCache[shader.shaderPath] = nil
 }
 
 const typeToken = "#type"

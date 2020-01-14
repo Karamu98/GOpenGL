@@ -1,16 +1,13 @@
 package main
 
-import (
-	"./shader"
-	"github.com/go-gl/mathgl/mgl32"
-)
+import "github.com/go-gl/mathgl/mgl32"
 
 type light struct {
 	position mgl32.Vec3
 	colour   mgl32.Vec3
 }
 
-func (light *light) Draw(shader *shader.Shader) {
+func (light *light) Draw(shader *Shader) {
 	shader.SetVec3("gLight.pos", light.position)
 	shader.SetVec3("gLight.colour", light.colour)
 }
@@ -22,7 +19,7 @@ type PointLight struct {
 }
 
 // Draw ... Sets uniforms with light data
-func (light *PointLight) Draw(shader *shader.Shader) {
+func (light *PointLight) Draw(shader *Shader) {
 	light.light.Draw(shader)
 	shader.SetFloat("gLight.attenuation", light.attenuation)
 }
