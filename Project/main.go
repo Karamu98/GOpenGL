@@ -57,7 +57,7 @@ func clientInit() bool {
 	}
 
 	// Create and bind texture
-	texture = CreateTexture("res/textures/test.png")
+	texture = CreateTexture("res/textures/go.png")
 
 	objShader.SetFloat("gGamma", 1.8)
 	objShader.SetInt("gMaterial.texture", 0)
